@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model File {
+  id           String   @id @default(uuid())
+  originalname String
+  mimetype     String
+  size         Int
+  author       Author?  @relation(fields: [authorId], references: [id])
+  authorId     String?
+}
+
+model Author {
+  id       String   @id @default(uuid())
+  username String
+  password String
+  files    File[]
+  tokens   Bearer[]
+}
+
+model Bearer {
+  id       String @id @default(uuid())
+  author   Author @relation(fields: [authorId], references: [id])
+  authorId String
+}
