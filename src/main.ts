@@ -1,17 +1,23 @@
 import express, { Express, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
+import { PrismaClient } from '@prisma/client';
+
 import disk from './model/diskStorage.js';
 import authenticator from './controller/middleware.js';
+import userRouter from './controller/api/v1/user.js';
 
+
+const prisma = new PrismaClient();
 const upload: multer.Multer = multer({ storage: disk });
 const app: Express = express();
 
-const prisma = new PrismaClient();
+app.use(express.json())
+
+app.use('/api/v1/user', userRouter);
 
 app.get('/v/:id', async(req: Request, res: Response) => {
     try {
@@ -55,4 +61,17 @@ app.post('/upload', authenticator, upload.single('file'), async(req: Request, re
     }
 });
 
-app.listen(3000);
+const server = app.listen(80, () => {
+    console.log(`Server running at http://localhost:${80}/`);
+});
+
+const shutdown = () => {
+    console.log('Shutting down server...');
+    server.close(() => {
+      console.log('Server closed.');
+      process.exit(0);
+    });
+};
+  
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

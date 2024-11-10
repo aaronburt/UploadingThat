@@ -12,13 +12,13 @@ model File {
   originalname String
   mimetype     String
   size         Int
-  author       Author?  @relation(fields: [authorId], references: [id])
-  authorId     String?
+  user       User?  @relation(fields: [userId], references: [id])
+  userId     String?
 }
 
-model Author {
+model User {
   id       String   @id @default(uuid())
-  username String
+  username String @unique
   password String
   files    File[]
   tokens   Bearer[]
@@ -26,6 +26,6 @@ model Author {
 
 model Bearer {
   id       String @id @default(uuid())
-  author   Author @relation(fields: [authorId], references: [id])
-  authorId String
+  user   User @relation(fields: [userId], references: [id])
+  userId String
 }
