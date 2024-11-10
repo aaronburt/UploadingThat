@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Feed</title>
+    <style>
+        :root {
+            --color-background: #121212;
+            --color-surface: #1e1e1e;
+            --color-text: #ffffff;
+            --color-border: #333333;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 2rem;
+            --border-radius: 4px;
+            --border-radius-lg: 8px;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Navbar styles */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--color-surface);
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .navbar h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            color: var(--color-text);
+        }
+
+        .username {
+            font-size: 1rem;
+            color: var(--color-text);
+            text-align: right;
+        }
+
+        .feed {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+            padding: var(--spacing-lg);
+        }
+
+        .feed-item {
+            background-color: var(--color-surface);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--color-border);
+            overflow: hidden;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .feed-item h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--color-text);
+        }
+
+        .feed-item p {
+            font-size: 0.9rem;
+            color: var(--color-text);
+            margin: var(--spacing-sm) 0;
+        }
+
+        .feed-item a {
+            color: #4caf50;
+            text-decoration: none;
+        }
+
+        .feed-item img,
+        .feed-item video,
+        .feed-item iframe {
+            max-width: 100%;
+            border-radius: var(--border-radius);
+        }
+
+        .feed-item video {
+            max-height: 300px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h1>File Feed</h1>
+        <a href="/upload" target="_blank"><div class="username"><%= username %></div></a>
+    </div>
+
+    <div class="feed">
+        <% file.forEach(item => { %>
+            <div class="feed-item">
+                <h3><%= item.originalname %></h3>
+                <p>Size: <%= (item.size / 1024).toFixed(2) %> KB</p>
+                
+                <% if (item.mimetype.startsWith("image")) { %>
+                    <img src="/v/<%= item.id %>" alt="<%= item.originalname %>">
+                
+                <% } else if (item.mimetype.startsWith("video")) { %>
+                    <video src="/v/<%= item.id %>" controls></video>
+                
+                <% } else if (item.mimetype === "application/pdf") { %>
+                    <iframe src="/v/<%= item.id %>" frameborder="0" width="100%" height="400px"></iframe>
+                
+                <% } else if (item.mimetype === "application/x-msdownload") { %>
+                    <p><strong>Executable file:</strong> <a href="/v/<%= item.id %>" download="<%= item.originalname %>">Download <%= item.originalname %></a></p>
+                
+                <% } else { %>
+                    <p><strong>File:</strong> <a href="/v/<%= item.id %>" download="<%= item.originalname %>">Download <%= item.originalname %></a></p>
+                <% } %>
+            </div>
+        <% }) %>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <style>
+    :root {
+      /* Color palette */
+      --color-background: #121212;
+      --color-surface: #1e1e1e;
+      --color-input-bg: #2a2a2a;
+      --color-border: #333333;
+      --color-text: #ffffff;
+      --color-primary: #4caf50;
+      --color-primary-hover: #45a049;
+      --color-error: #ff4444;
+      
+      /* Spacing */
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 2rem;
+      
+      /* Border radius */
+      --border-radius: 4px;
+      --border-radius-lg: 8px;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: var(--color-background);
+      color: var(--color-text);
+      font-family: Arial, sans-serif;
+      padding: var(--spacing-lg) 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .login-form {
+      display: grid;
+      gap: var(--spacing-md);
+      padding: var(--spacing-lg);
+      background-color: var(--color-surface);
+      border-radius: var(--border-radius-lg);
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .login-form label {
+      font-size: 0.9rem;
+    }
+
+    .login-form input[type="text"],
+    .login-form input[type="password"] {
+      padding: 0.7rem;
+      font-size: 1rem;
+      border-radius: var(--border-radius);
+      border: 1px solid var(--color-border);
+      background-color: var(--color-input-bg);
+      color: var(--color-text);
+    }
+
+    .login-form button {
+      padding: 0.7rem;
+      font-size: 1rem;
+      border-radius: var(--border-radius);
+      background-color: var(--color-primary);
+      color: var(--color-text);
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .login-form button:hover {
+      background-color: var(--color-primary-hover);
+    }
+
+    .continue-box {
+      margin-top: var(--spacing-sm);
+      padding: var(--spacing-md);
+      background-color: var(--color-surface);
+      border-radius: var(--border-radius-lg);
+      text-align: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .continue-box p {
+      margin: 0 0 var(--spacing-md) 0;
+    }
+
+    .continue-box button {
+      padding: var(--spacing-sm) var(--spacing-md);
+      font-size: 1rem;
+      border-radius: var(--border-radius);
+      background-color: var(--color-primary);
+      color: var(--color-text);
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .continue-box button:hover {
+      background-color: var(--color-primary-hover);
+    }
+
+    .error-message {
+      color: var(--color-error);
+      font-size: 0.9rem;
+      margin-top: var(--spacing-sm);
+      display: none;
+    }
+
+    .username {
+      font-size: 1rem;
+      color: var(--color-text);
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <form class="login-form" id="loginForm">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" required autocomplete="off">
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+      <div class="error-message" id="errorMessage"></div>
+      <button type="submit">Login</button>
+    </form>
+
+    <div class="continue-box" id="continueBox" style="display: none;">
+      <p>You are already logged in. Would you like to continue?</p>
+      <button onclick="window.location.href='/'">Continue</button>
+    </div>
+  </div>
+
+  <script>
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    function showError(message) {
+      const errorElement = document.getElementById('errorMessage');
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+      
+      setTimeout(() => {
+        errorElement.style.display = 'none';
+      }, 5000);
+    }
+
+    const token = getCookie('token');
+
+    if (token) {
+      const continueBox = document.getElementById('continueBox');
+      continueBox.style.display = 'block';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const response = await fetch('/api/v1/user/authenticate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+
+          if (data.id && data.userId) {
+            window.location.href = '/';
+          } else {
+            console.error('Invalid response format');
+            showError('Login failed: Invalid response format');
+          }
+        } else {
+          console.error('Login failed: Invalid credentials');
+          showError('Invalid username or password');
+        }
+      } catch (error) {
+        console.error('An error occurred:', error);
+        showError('Connection error. Please try again later.');
+      }
+    });
+  </script>
+</body>
+</html>

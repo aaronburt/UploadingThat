@@ -1,83 +1,90 @@
 import express, { Express, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import cookieParser from 'cookie-parser';
-
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-
 import disk from './model/diskStorage.js';
 import authenticator from './controller/middleware.js';
-import userRouter from './controller/api/v1/user.js';
+import userRouter from './controller/api/v1/router/user.js';
+import FILE from './controller/api/v1/file.js';
+import env from './env.js';
 
 const prisma = new PrismaClient();
 const upload: multer.Multer = multer({ storage: disk });
 const app: Express = express();
 
+// Middleware setup
+app.set('view engine', 'ejs');
 app.use(cookieParser());
 app.use(express.json());
+
+// Routes
 app.use('/api/v1/user', userRouter);
 
-app.get('/', authenticator, async(req: Request, res: Response) => {
-    return res.sendStatus(200);
+app.get('/login', async (req: Request, res: Response) => res.render('login'));
+
+app.get('/upload', authenticator, async (req: Request, res: Response) => {
+    if (!req.user) return res.redirect('/login');
+    return res.render('upload', { username: req.user.user.username });
 });
 
-app.get('/v/:id', async(req: Request, res: Response) => {
+app.get('/', authenticator, async (req: Request, res: Response) => {
     try {
-        const record = await prisma.file.findFirst({ where: { id: req.params.id } })
+        
+        const files = await FILE.getFile(req.user.userId) as Array<{
+            id: string;
+            originalname: string;
+            mimetype: string;
+            size: number;
+            userId: string | null;
+        }>;
+    
+        return res.render('view', { file: files, username: req.user.user.username });
+    
+    } catch(error: any){
+        console.warn(error);
+        return res.sendStatus(500)
+    }
+});
 
-        if(record){
-            const file = path.resolve(path.join(import.meta.dirname, '..', 'upload', record.id));
-            if(fs.existsSync(file)){
-                return res.sendFile(file);
+app.get('/v/:id', async (req: Request, res: Response) => {
+    try {
+        const record = await prisma.file.findFirst({ where: { id: req.params.id } });
+        if (!record) return res.sendStatus(400);
+
+        const filePath = path.resolve(path.join(import.meta.dirname, '..', 'upload', record.id));
+        if (!fs.existsSync(filePath)) return res.sendStatus(400);
+
+        return res.sendFile(filePath);
+    } catch (error) {
+        console.warn(error);
+        return res.sendStatus(500);
+    }
+});
+
+app.post('/upload', authenticator, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+        if (!req.file) return res.sendStatus(400);
+
+        const { filename, originalname, mimetype, size } = req.file;
+        const newFile = await prisma.file.create({
+            data: {
+                id: filename,
+                originalname,
+                mimetype,
+                size,
+                userId: req.user.userId
             }
-        }
-    
-        return res.sendStatus(400);
-    } catch(error: any){
+        });
+
+        return res.json(newFile);
+    } catch (error) {
         console.warn(error);
         return res.sendStatus(500);
     }
 });
 
-// TODO add userId to upload so its tracked.
-app.post('/upload', authenticator, upload.single('file'), async(req: Request, res: Response) => {
-    try {
-        if(req.file){
-
-            const { filename, originalname, mimetype, size } = req.file;
-
-
-            const file = await prisma.file.create({
-                data: {
-                    id: filename,
-                    originalname: originalname,
-                    mimetype: mimetype,
-                    size: size,            
-                }
-            });
-
-            return res.json(file);
-        }
-    
-        return res.sendStatus(400);
-    } catch(error: any){
-        console.warn(error);
-        return res.sendStatus(500);
-    }
+app.listen(env.SERVER_PORT, () => {
+    console.log(`Server running at http://localhost:${env.SERVER_PORT}/`);
 });
-
-const server = app.listen(80, () => {
-    console.log(`Server running at http://localhost:${80}/`);
-});
-
-const shutdown = () => {
-    console.log('Shutting down server...');
-    server.close(() => {
-      console.log('Server closed.');
-      process.exit(0);
-    });
-};
-  
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);

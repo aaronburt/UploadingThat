@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Page</title>
+    <style>
+        :root {
+            --color-background: #121212;
+            --color-surface: #1e1e1e;
+            --color-input-bg: #2a2a2a;
+            --color-border: #333333;
+            --color-text: #ffffff;
+            --color-primary: #4caf50;
+            --color-primary-hover: #45a049;
+            --color-error: #ff4444;
+
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 2rem;
+
+            --border-radius: 4px;
+            --border-radius-lg: 8px;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--color-surface);
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .navbar h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            color: var(--color-text);
+        }
+
+        .username {
+            font-size: 1rem;
+            color: var(--color-text);
+            text-align: right;
+        }
+
+
+        .container {
+            display: grid;
+            place-items: center;
+            flex: 1;
+        }
+
+        .upload-form {
+            background-color: var(--color-surface);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .upload-form label {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .upload-form input[type="file"] {
+            background-color: var(--color-input-bg);
+            border: 1px solid var(--color-border);
+            padding: var(--spacing-sm);
+            border-radius: var(--border-radius);
+            color: var(--color-text);
+        }
+
+        .upload-form button {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            background-color: var(--color-primary);
+            border: none;
+            border-radius: var(--border-radius);
+            color: var(--color-text);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .upload-form button:hover {
+            background-color: var(--color-primary-hover);
+        }
+
+        .uploaded-media {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .uploaded-media img,
+        .uploaded-media video {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--color-border);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h1>File Feed</h1>
+        <a href="/"><div class="username"><%= username %></div></a>
+
+    </div>
+
+    <div class="uploaded-media" id="uploadedMedia"></div>
+
+    <div class="container">
+        <form class="upload-form" id="uploadForm">
+            <label for="file">Upload File:</label>
+            <input type="file" id="file" name="file" required>
+            <button type="submit">Upload</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const fileInput = document.getElementById('file');
+            if (!fileInput.files[0]) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Upload failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.id && result.originalname && result.mimetype && result.size && result.userId) {
+                    const uploadedMedia = document.getElementById('uploadedMedia');
+                    uploadedMedia.innerHTML = ''; 
+
+                    const mediaUrl = `/v/${result.id}`;
+                    
+                    if (result.mimetype.startsWith("image")) {
+                        const img = document.createElement("img");
+                        img.src = mediaUrl;
+                        img.alt = result.originalname;
+                        uploadedMedia.appendChild(img);
+                    } else if (result.mimetype.startsWith("video")) {
+                        const video = document.createElement("video");
+                        video.src = mediaUrl;
+                        video.controls = true;
+                        uploadedMedia.appendChild(video);
+                    } else {
+                        alert("Unsupported file type for preview.");
+                    }
+
+                } else {
+                    throw new Error("Unexpected server response format.");
+                }
+            } catch (error) {
+                console.error("Upload failed:", error);
+                alert("Upload failed. Please try again.");
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,8 +1,8 @@
-import express, {  NextFunction, Request, Response } from "express";
-import IDENTITY from "../../identity.js";
-import UTILITY from "../../utility.js";
+import express, {  NextFunction, Request, Response, Router } from "express";
+import IDENTITY from "../../../identity.js";
+import UTILITY from "../../../utility.js";
 
-const userRouter = express.Router();
+const userRouter: Router = express.Router();
 
 userRouter.post('/create', async(req: Request, res: Response, next: NextFunction) => { 
     try {
@@ -20,7 +20,6 @@ userRouter.post('/create', async(req: Request, res: Response, next: NextFunction
         return res.sendStatus(500);
     }
 });
-
 
 userRouter.post('/authenticate', async(req: Request, res: Response) => { 
     try {

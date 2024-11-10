@@ -34,13 +34,16 @@ export default class IDENTITY {
     }
 
     public static async verifyBearer(tokenId: string){
-        const token = await this.prisma.bearer.findUnique({
+        const bearerUser = await this.prisma.bearer.findUnique({
             where: {
                 id: tokenId
+            }, 
+            include: {
+                user: true
             }
         });
 
-        return token !== null;
+        return bearerUser !== null ? bearerUser : false; 
     }
 
     public static async deleteUser(id: string): Promise<{ id: string; username: string; password: string; }>{
