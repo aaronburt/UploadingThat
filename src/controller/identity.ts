@@ -25,6 +25,24 @@ export default class IDENTITY {
         }) 
     }
 
+    public static async generateBearer(id: string){
+        return await this.prisma.bearer.create({
+            data: {
+                userId: id,
+            }
+        })
+    }
+
+    public static async verifyBearer(tokenId: string){
+        const token = await this.prisma.bearer.findUnique({
+            where: {
+                id: tokenId
+            }
+        });
+
+        return token !== null;
+    }
+
     public static async deleteUser(id: string): Promise<{ id: string; username: string; password: string; }>{
         return await this.prisma.user.delete({
             where: {
@@ -60,10 +78,10 @@ export default class IDENTITY {
     }
 
     /* TODO ADD SUPPORT FOR BCRYPT, INSTEAD OF CHECKING PLAINTEXT */
-    public static async checkUserPassword(id: string, plaintextPassword: string){
+    public static async checkUserPassword(username: string, plaintextPassword: string){
         return await this.prisma.user.findUnique({
             where: { 
-                id: id,
+                username: username,
                 password: plaintextPassword
             },
             select: {

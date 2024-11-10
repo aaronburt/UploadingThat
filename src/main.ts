@@ -1,23 +1,26 @@
 import express, { Express, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import cookieParser from 'cookie-parser';
 
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-import { PrismaClient } from '@prisma/client';
-
 import disk from './model/diskStorage.js';
 import authenticator from './controller/middleware.js';
 import userRouter from './controller/api/v1/user.js';
-
 
 const prisma = new PrismaClient();
 const upload: multer.Multer = multer({ storage: disk });
 const app: Express = express();
 
-app.use(express.json())
-
+app.use(cookieParser());
+app.use(express.json());
 app.use('/api/v1/user', userRouter);
+
+app.get('/', authenticator, async(req: Request, res: Response) => {
+    return res.sendStatus(200);
+});
 
 app.get('/v/:id', async(req: Request, res: Response) => {
     try {
@@ -30,24 +33,27 @@ app.get('/v/:id', async(req: Request, res: Response) => {
             }
         }
     
-        return res.sendStatus(400)
+        return res.sendStatus(400);
     } catch(error: any){
         console.warn(error);
         return res.sendStatus(500);
     }
 });
 
+// TODO add userId to upload so its tracked.
 app.post('/upload', authenticator, upload.single('file'), async(req: Request, res: Response) => {
     try {
         if(req.file){
 
             const { filename, originalname, mimetype, size } = req.file;
+
+
             const file = await prisma.file.create({
                 data: {
                     id: filename,
                     originalname: originalname,
                     mimetype: mimetype,
-                    size: size
+                    size: size,            
                 }
             });
 

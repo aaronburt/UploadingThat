@@ -20,6 +20,13 @@ export default class UTILITY {
                'username' in obj && typeof (obj as { username: unknown }).username === 'string'
     }
 
+    public static isValidBearerToken(obj: unknown): obj is { id: string; userId: string; } {
+        return typeof obj === 'object' &&
+               obj !== null &&
+               'id' in obj && typeof (obj as { id: unknown }).id === 'string' &&
+               'userId' in obj && typeof (obj as { userId: unknown }).userId === 'string'
+    }
+
     public static isString(arg: unknown){
         return typeof arg === 'string';
     }
